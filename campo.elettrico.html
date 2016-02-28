@@ -328,7 +328,7 @@ window.addEventListener('load',function(){
 		}
 		cambiaModalitaDisegno(qt/100)
 	});
-	window.addEventListener('keydown',function(e){
+	window.addEventListener('keydown',function(e){alert();
 		var pDisegni=['raggi','campo','']
 		if(e.keyCode==13 && dati.mobility){
 			dati.cariche.push([[dati.cariche[0][0][0],dati.cariche[0][0][1]],dati.cariche[0][1],dati.cariche[0][2]])
@@ -358,7 +358,6 @@ window.addEventListener('load',function(){
 	})
 	muovi(0);
 });
-alert();
 </script>
 
 </head>
