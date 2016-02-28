@@ -17,32 +17,28 @@ var dati={
 	cariche:[[[-200,-200],0,25,false,[0,0]]],
 	dimensioni:[],
 	posNewCarica:[],
+	caricaSelezionata:false,
 	colore:false,
 	mobility:false,
-	mostPower:0,
+	mostPower:1,
+	definizione:1,
 	disegno:'raggi',
 }
+
 function disegnaCariche(canvas){
 	var c=canvas.getContext('2d');
 	c.clearRect(0,0,dati.dimensioni[0],dati.dimensioni[1]);
 	for(var i=0;i<dati.cariche.length;i++){
 		c.beginPath();
+		c.strokeStyle=(i==0 && dati.mobility) ? 'yellow' : 'black';
 		c.fillStyle=(dati.cariche[i][1]>0) ? 'red' : 'blue'
-		c.arc(dati.cariche[i][0][0],dati.cariche[i][0][1],dati.cariche[i][2],0,2*Math.PI);
+		c.arc(dati.cariche[i][0][0]*dati.definizione,dati.cariche[i][0][1]*dati.definizione,dati.cariche[i][2]*dati.definizione,0,2*Math.PI);
 		c.fill();
 		c.stroke();
 		c.fillStyle='white';
 		c.font="10px Arial";
-		c.fillText(dati.cariche[i][1]+'C',dati.cariche[i][0][0]-dati.cariche[i][2]+2,dati.cariche[i][0][1]+5)
+		c.fillText(dati.cariche[i][1]+'C',(dati.cariche[i][0][0]-dati.cariche[i][2]+2)*dati.definizione,(dati.cariche[i][0][1]+5)*dati.definizione)
 	}
-}
-function devoDisegnare(nome){
-	var tot=dati.disegno.split(',')
-	for(var i=0;i<tot.length;i++){
-		if(nome==tot[i])
-			return true;
-	}
-	return false;
 }
 function printCampo(canvas){
 	if(!devoDisegnare('raggi'))
@@ -77,8 +73,8 @@ function printCampo(canvas){
 				potenza=255-Math.floor(Math.logT(v,Math.pow(dati.mostPower,1/255)));
 				c.beginPath();
 				c.strokeStyle=(dati.colore) ? 'rgb('+potenza+','+potenza+','+potenza+')' : 'black';
-				c.moveTo(prePos[0],prePos[1]);
-				c.lineTo(pos[0],pos[1]);
+				c.moveTo(prePos[0]*dati.definizione,prePos[1]*dati.definizione);
+				c.lineTo(pos[0]*dati.definizione,pos[1]*dati.definizione);
 				
 				c.stroke();
 				if(t%f==4){
@@ -86,10 +82,10 @@ function printCampo(canvas){
 						ang+=Math.PI;
 					var r=5;
 					c.beginPath()
-					c.moveTo(pos[0]+r*Math.cos(ang-Math.PI/2),pos[1]+r*Math.sin(ang-Math.PI/2));
-					c.lineTo(pos[0]+r*Math.cos(ang+Math.PI/2),pos[1]+r*Math.sin(ang+Math.PI/2));
-					c.lineTo(pos[0]+r*Math.cos(ang),pos[1]+r*Math.sin(ang));
-					c.lineTo(pos[0]+r*Math.cos(ang-Math.PI/2),pos[1]+r*Math.sin(ang-Math.PI/2));
+					c.moveTo((pos[0]+r*Math.cos(ang-Math.PI/2))*dati.definizione,(pos[1]+r*Math.sin(ang-Math.PI/2))*dati.definizione);
+					c.lineTo((pos[0]+r*Math.cos(ang+Math.PI/2))*dati.definizione,(pos[1]+r*Math.sin(ang+Math.PI/2))*dati.definizione);
+					c.lineTo((pos[0]+r*Math.cos(ang))*dati.definizione,(pos[1]+r*Math.sin(ang))*dati.definizione);
+					c.lineTo((pos[0]+r*Math.cos(ang-Math.PI/2))*dati.definizione,(pos[1]+r*Math.sin(ang-Math.PI/2))*dati.definizione);
 					c.fillStyle=(dati.colore) ? 'rgb('+potenza+','+potenza+','+potenza+')' : 'black';
 					c.fill();
 					c.stroke();
@@ -102,6 +98,36 @@ function printCampo(canvas){
 		}
 	}
 }
+function generaColoreCampo(def){
+	if(!devoDisegnare('campo') && def>3)
+		return;
+	var canvas=g('campo2'), c=canvas.getContext('2d'), potenza, dir;
+	dati.mostPower=(dati.mostPower==0) ? 1 : dati.mostPower;
+	for(var x=0;x<dati.dimensioni[0];x+=def){
+			for(var y=0;y<dati.dimensioni[1];y+=def){
+				dir=trovaCampo([x+def/2,y+def/2]);
+				potenza=255-Math.floor(Math.logT(Math.sqrt(dir[0]*dir[0]+dir[1]*dir[1]),Math.pow(dati.mostPower,1/255)));
+				c.fillStyle='rgb('+potenza+','+(potenza)+','+potenza+')'
+				c.fillRect(x*dati.definizione,y*dati.definizione,(def+1)*dati.definizione,(def+1)*dati.definizione);
+			}
+	}
+	
+}
+var ex=false;
+function disegna1(b){
+		generaColoreCampo(12.5);
+		disegnaCariche(g('cariche'));
+		printCampo(g('campo'));
+}
+function devoDisegnare(nome){
+	var tot=dati.disegno.split(',')
+	for(var i=0;i<tot.length;i++){
+		if(nome==tot[i])
+			return true;
+	}
+	return false;
+}
+
 Math.logT=function(a,b){
 	return Math.log(a)/Math.log(b);
 }
@@ -118,7 +144,6 @@ function muovi(v,T){
 	}
 	dati.mostPower=temp;
 	for(var i in f){
-	    b=true;
 		ang=(f[i][0]<0) ? Math.atan(f[i][1]/f[i][0])+Math.PI : Math.atan(f[i][1]/f[i][0]);
 		ang=(f[i][0]==0) ? Math.PI : ang;
 		m=dati.cariche[i][1]*Math.sqrt(f[i][0]*f[i][0]+f[i][1]*f[i][1])/10;
@@ -127,128 +152,16 @@ function muovi(v,T){
 	}
 	fr=Math.floor(60/(1000/(T-pT)));
 	fr=(fr) ? fr : 1;
-	if(v%fr==0 && b){
+	if(v%fr==0){
 		v=0;
-		disegna1(true);
+		if(dati.mobility)
+			disegna1();
 
 	}
 	pT=(T) ? T : 0;
 	window.requestAnimationFrame(function(t){muovi(v+1,t)});
 }
-function g(n){
-	return document.getElementById(n);
-}
-var ex=false;
-function disegna1(b){
-	ex=(b) ? true : ex;
-	if((ex && b) || (!ex)){
-		generaColoreCampo(12.5);
-		disegnaCariche(g('cariche'));
-		printCampo(g('campo'));
-	}
-}
-window.addEventListener('load',function(){
-	g('campo').width=g('campo').clientWidth;
-	g('campo').height=g('campo').clientHeight;
-	g('campo2').width=g('campo2').clientWidth;
-	g('campo2').height=g('campo2').clientHeight;
-	g('cariche').width=g('cariche').clientWidth;
-	g('cariche').height=g('cariche').clientHeight;
-	dati.dimensioni=[g('campo').width,g('campo').height];
-	disegnaCariche(g('cariche'));
-	printCampo(g('campo'));
-	window.addEventListener('contextmenu',function(e){
-		if((e.clientX<g('nuovaCarica').offsetLeft ||  e.clientY<g('nuovaCarica').offsetTop || e.clientX>g('nuovaCarica').offsetLeft+g('nuovaCarica').clientWidth ||  e.clientY>g('nuovaCarica').offsetTop+g('nuovaCarica').clientHeight) && +g('nuovaCarica').style.display==''){
-			g('nuovaCarica').style.display='none';
-			return;
-		}
-		if(g('nuovaCarica').style.display=='')
-			return;
-		g('nuovaCarica').style.display='';
-		g('nuovaCarica').style.top=e.clientY;
-		g('nuovaCarica').style.left=e.clientX;
-		g('posY').value=e.clientY;
-		g('posX').value=e.clientX;
-		dati.posNewCarica=[e.clientX,e.clientY];
-		return false;
-	})
-	window.addEventListener('click',function(e){disegna1();
-		var pos=[e.clientX,e.clientY], posC=[0,0], r;
-		for(var i=1;i<dati.cariche.length;i++){
-			posC=[dati.cariche[i][0][0],dati.cariche[i][0][1]];
-			r=dati.cariche[i][2]
-			if((posC[0]-pos[0])*(posC[0]-pos[0])+(posC[1]-pos[1])*(posC[1]-pos[1])<r*r){
-				dati.cariche.splice(i,1)
-				return;
-			}
-		}
-	})
-	window.addEventListener('dblclick',function(e){
-		g('aggiuntaRapida').style.display='';
-		g('aggiuntaRapida').style.top=e.clientY;
-		g('aggiuntaRapida').style.left=e.clientX;
-	})
-	window.addEventListener('mousemove',function(e){
-	var x=e.clientX, y=e.clientY;
-	
-		if(!dati.mobility){
-			g('campoElettrico').style.display='';
-			g('campoElettrico').style.top=y+10;
-			g('campoElettrico').style.left=x+10;
-			var dir=trovaCampo([x,y])
-			g('valX').innerHTML=dir[0].toFixed(2);
-			g('valY').innerHTML=dir[1].toFixed(2);
-			g('val').innerHTML=Math.floor(dir[0]*dir[0]+dir[1]*dir[1]);
-		}else{disegna1();
-			g('campoElettrico').style.display='none';
-			dati.cariche[0][0]=[x,y];
-		}
-	})
-	window.addEventListener('wheel',function(e){
-		if(!dati.mobility)
-			return;
-			disegna1();
-		var qt=e.deltaY;
-		dati.cariche[0][1]+=qt/100;
-	});
-	window.addEventListener('keydown',function(e){
-	
-		var pDisegni=['raggi','campo','']
-		if(e.keyCode==32){
-			dati.mobility=!dati.mobility;
-			if(!dati.mobility)
-				dati.cariche[0]=[[-200,-200],0,25];
-		}
-		if(e.keyCode==13 && dati.mobility){
-			dati.cariche.push([[dati.cariche[0][0][0],dati.cariche[0][0][1]],dati.cariche[0][1],dati.cariche[0][2]])
-		}
-		if(e.keyCode==67){
-			dati.colore=!dati.colore;
-		}
-		if(e.keyCode==68){
-			generaColoreCampo(2)
-		}
-		if(e.keyCode==38){
-			dati.cariche[0][1]+=1;
-		}
-		if(e.keyCode==40){
-			dati.cariche[0][1]=1;
-		}
-		if(e.keyCode==8){
-			for(var i=0;i<pDisegni.length;i++){
-				if(pDisegni[i]==dati.disegno){
-					dati.disegno=(i+1==pDisegni.length) ? pDisegni[0] : pDisegni[i+1];
-					cancella();
-					disegna1();
-					return;
-				}
-					
-			}
-		}
-		disegna1();
-	})
-	muovi(0);
-});
+
 function trovaCampo(pos){
 	var dir=[0,0], v, ang, x=pos[0], y=pos[1];
 	for(var j=0;j<dati.cariche.length;j++){
@@ -256,9 +169,6 @@ function trovaCampo(pos){
 					v=40*Math.abs(dati.cariche[j][1])/Math.sqrt(Math.pow((dati.cariche[j][0][1]-y),2)+Math.pow((dati.cariche[j][0][0]-x),2));
 					if((x-dati.cariche[j][0][0])<0)
 						ang+=Math.PI;
-					/*if((x-dati.cariche[j][0][0])*(x-dati.cariche[j][0][0])+(y-dati.cariche[j][0][1])*(y-dati.cariche[j][0][1])<dati.cariche[j][2]*dati.cariche[j][2]){
-						continue;
-					}*/
 					if(dati.cariche[j][1]<0){
 						ang+=Math.PI;
 					}
@@ -267,28 +177,7 @@ function trovaCampo(pos){
 	}
 	return dir;
 }
-function aggiungi(s){eval(s)
-	disegna1();
-}
-function cancella(){
-	g('campo2').getContext('2d').clearRect(0,0,g('campo2').width,g('campo2').height)
-	g('campo').getContext('2d').clearRect(0,0,g('campo').width,g('campo').height)
-	g('cariche').getContext('2d').clearRect(0,0,g('cariche').width,g('cariche').height)
-}
-function generaColoreCampo(def){
-	if(!devoDisegnare('campo') && def>3)
-		return;
-	var canvas=g('campo2'), c=canvas.getContext('2d'), dimensioni=[canvas.width,canvas.height], potenza, dir;
-	for(var x=0;x<dimensioni[0];x+=def){
-			for(var y=0;y<dimensioni[1];y+=def){
-				dir=trovaCampo([x+def/2,y+def/2]);
-				potenza=255-Math.floor(Math.logT(Math.sqrt(dir[0]*dir[0]+dir[1]*dir[1]),Math.pow(dati.mostPower,1/255)));
-				c.fillStyle='rgb('+potenza+','+(potenza)+','+potenza+')'
-				c.fillRect(x,y,def+1,def+1);
-			}
-	}
-	
-}
+
 function generaVettore(s){
 	var num='', vS=[], v=[[0,0],0,0], contatore=0;
 	for(var i=2;i<s.length;i++){
@@ -315,6 +204,162 @@ function generaVettore(s){
 	return vS;
 	
 }
+function isInterno(pos){
+	for(var i=0;i<dati.cariche.length;i++){
+		if(Math.pow(dati.cariche[i][0][0]-pos[0],2)+Math.pow(dati.cariche[i][0][1]-pos[1],2)<dati.cariche[i][2]*dati.cariche[i][2])
+			return i;
+	}
+	return false;
+}
+function aggiungi(s){eval(s)
+	disegna1();
+}
+function cancella(){
+	g('campo2').getContext('2d').clearRect(0,0,g('campo2').width,g('campo2').height)
+	g('campo').getContext('2d').clearRect(0,0,g('campo').width,g('campo').height)
+	g('cariche').getContext('2d').clearRect(0,0,g('cariche').width,g('cariche').height)
+}
+function cambiaModalitaDisegno(qt){
+	var pDisegni=['raggi','campo','']
+	for(var i=0;i<pDisegni.length;i++){
+		if(pDisegni[i]==dati.disegno){
+			if(qt>0)
+				dati.disegno=(i+qt>=pDisegni.length) ? pDisegni[0] : pDisegni[i+qt];
+			else
+				dati.disegno=(i+qt<0) ? pDisegni[pDisegni.length-1] : pDisegni[i+qt];
+			cancella();
+			disegna1();
+			return;
+		}
+					
+	}
+}
+function g(n){
+	return document.getElementById(n);
+}
+window.addEventListener('load',function(){
+	var def=dati.definizione;
+	g('campo').width=def*g('campo').clientWidth;
+	g('campo').height=def*g('campo').clientHeight;
+	g('campo2').width=def*g('campo2').clientWidth;
+	g('campo2').height=def*g('campo2').clientHeight;
+	g('cariche').width=def*g('cariche').clientWidth;
+	g('cariche').height=def*g('cariche').clientHeight;
+	dati.dimensioni=[g('campo').width/def,g('campo').height/def];
+	disegnaCariche(g('cariche'));
+	printCampo(g('campo'));
+	window.addEventListener('mousedown',function(e){
+		if(e.which==1){
+			if(dati.mobility)
+				return;
+			var n=isInterno([e.clientX,e.clientY]);
+			if(!n)
+				return;
+			dati.cariche[0]=dati.cariche[n];
+			dati.cariche.splice(n,1);
+			dati.caricaSelezionata=true;
+			dati.mobility=true;
+		}if(e.which==3){
+			dati.mobility=(dati.mobility) ? false : true;
+			dati.caricaSelezionata=false;
+			dati.cariche[0]=[[-200,-200],0,25,false,[0,0]];
+			disegna1()
+			/*if((e.clientX<g('nuovaCarica').offsetLeft ||  e.clientY<g('nuovaCarica').offsetTop || e.clientX>g('nuovaCarica').offsetLeft+g('nuovaCarica').clientWidth ||  e.clientY>g('nuovaCarica').offsetTop+g('nuovaCarica').clientHeight) && +g('nuovaCarica').style.display==''){
+			g('nuovaCarica').style.display='none';
+			return;
+			}
+			if(g('nuovaCarica').style.display=='')
+				return;
+			g('nuovaCarica').style.display='';
+			g('nuovaCarica').style.top=e.clientY;
+			g('nuovaCarica').style.left=e.clientX;
+			g('posY').value=e.clientY;
+			g('posX').value=e.clientX;
+			dati.posNewCarica=[e.clientX,e.clientY];
+			return false;*/
+		}
+	})
+	window.addEventListener('click',function(e){
+		if(dati.mobility){
+			dati.cariche.push([[dati.cariche[0][0][0],dati.cariche[0][0][1]],dati.cariche[0][1],dati.cariche[0][2]]);
+			if(dati.caricaSelezionata){
+				dati.mobility=false;
+				dati.caricaSelezionata=false;
+				dati.cariche[0]=[[-200,-200],0,25,false,[0,0]];
+			}disegna1();
+			return;
+		}
+		var pos=[e.clientX,e.clientY], posC=[0,0], r;
+		for(var i=1;i<dati.cariche.length;i++){
+			posC=[dati.cariche[i][0][0],dati.cariche[i][0][1]];
+			r=dati.cariche[i][2]
+			if((posC[0]-pos[0])*(posC[0]-pos[0])+(posC[1]-pos[1])*(posC[1]-pos[1])<r*r){
+				dati.cariche.splice(i,1)
+				return;
+			}
+		}
+	});
+	window.addEventListener('dblclick',function(e){
+		g('aggiuntaRapida').style.display='';
+		g('aggiuntaRapida').style.top=e.clientY;
+		g('aggiuntaRapida').style.left=e.clientX;
+	})
+	window.addEventListener('mousemove',function(e){
+	var x=e.clientX, y=e.clientY;
+	
+		if(!dati.mobility){
+			g('campoElettrico').style.display='';
+			g('campoElettrico').style.top=y+10;
+			g('campoElettrico').style.left=x+10;
+			var dir=trovaCampo([x,y])
+			g('valX').innerHTML=dir[0].toFixed(2);
+			g('valY').innerHTML=dir[1].toFixed(2);
+			g('val').innerHTML=Math.floor(dir[0]*dir[0]+dir[1]*dir[1]);
+		}else{
+			g('campoElettrico').style.display='none';
+			dati.cariche[0][0]=[x,y];
+		}
+	})
+	window.addEventListener('wheel',function(e){
+		var qt=e.deltaY;
+		if(dati.mobility){
+			dati.cariche[0][1]+=qt/100;
+			return;
+		}
+		cambiaModalitaDisegno(qt/100)
+	});
+	window.addEventListener('keydown',function(e){
+		var pDisegni=['raggi','campo','']
+		if(e.keyCode==32){
+			dati.mobility=!dati.mobility;
+			if(!dati.mobility)
+				dati.cariche[0]=[[-200,-200],0,25];
+		}
+		if(e.keyCode==13 && dati.mobility){
+			dati.cariche.push([[dati.cariche[0][0][0],dati.cariche[0][0][1]],dati.cariche[0][1],dati.cariche[0][2]])
+		}
+		if(e.keyCode==67){
+			dati.colore=!dati.colore;
+		}
+
+		if(e.keyCode==38){
+			dati.cariche[0][1]+=1;
+		}
+		if(e.keyCode==40){
+			dati.cariche[0][1]-=1;
+		}
+		if(e.keyCode==8){
+			cambiaModalitaDisegno(1)
+		}
+		if(e.keyCode==68){
+			generaColoreCampo(2)
+		}
+		else
+			disegna1();
+	})
+	muovi(0);
+});
+
 </script>
 
 </head>
