@@ -114,7 +114,7 @@ function generaColoreCampo(def){
 	
 }
 var ex=false;
-function disegna1(b){alert();
+function disegna1(){
 		generaColoreCampo(12.5);
 		disegnaCariche(g('cariche'));
 		printCampo(g('campo'));
@@ -329,7 +329,6 @@ window.addEventListener('load',function(){
 		cambiaModalitaDisegno(qt/100)
 	});
 	window.addEventListener('keydown',function(e){
-		alert(e.keyCode);
 		var pDisegni=['raggi','campo','']
 		if(e.keyCode==13 && dati.mobility){
 			dati.cariche.push([[dati.cariche[0][0][0],dati.cariche[0][0][1]],dati.cariche[0][1],dati.cariche[0][2]])
