@@ -27,7 +27,7 @@ var dati={
 
 function disegnaCariche(canvas){
 	var c=canvas.getContext('2d');
-	c.clearRect(0,0,dati.dimensioni[0],dati.dimensioni[1]);
+	c.clearRect(0,0,dati.dimensioni[0],dati.dimensioni[1]);alert(dati.cariche);
 	for(var i=0;i<dati.cariche.length;i++){
 		c.beginPath();
 		c.strokeStyle=(i==0 && dati.mobility) ? 'yellow' : 'black';
