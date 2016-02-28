@@ -19,7 +19,7 @@ var dati={
 	posNewCarica:[],
 	caricaSelezionata:false,
 	colore:false,
-	mobility:false,
+	mobility:true,
 	mostPower:1,
 	definizione:1,
 	disegno:'raggi',
@@ -27,7 +27,7 @@ var dati={
 
 function disegnaCariche(canvas){
 	var c=canvas.getContext('2d');
-	c.clearRect(0,0,dati.dimensioni[0],dati.dimensioni[1]);alert(dati.mobility);
+	c.clearRect(0,0,dati.dimensioni[0],dati.dimensioni[1]);
 	for(var i=0;i<dati.cariche.length;i++){
 		c.beginPath();
 		c.strokeStyle=(i==0 && dati.mobility) ? 'yellow' : 'black';
@@ -37,7 +37,6 @@ function disegnaCariche(canvas){
 		c.stroke();
 		c.fillStyle='white';
 		c.font="10px Arial";
-		alert('disegnato')
 		c.fillText(dati.cariche[i][1]+'C',(dati.cariche[i][0][0]-dati.cariche[i][2]+2)*dati.definizione,(dati.cariche[i][0][1]+5)*dati.definizione)
 	}
 }
