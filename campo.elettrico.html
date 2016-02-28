@@ -37,6 +37,7 @@ function disegnaCariche(canvas){
 		c.stroke();
 		c.fillStyle='white';
 		c.font="10px Arial";
+		alert('disegnato')
 		c.fillText(dati.cariche[i][1]+'C',(dati.cariche[i][0][0]-dati.cariche[i][2]+2)*dati.definizione,(dati.cariche[i][0][1]+5)*dati.definizione)
 	}
 }
@@ -114,10 +115,9 @@ function generaColoreCampo(def){
 	
 }
 var ex=false;
-function disegna1(){alert(1);
+function disegna1(){
 		generaColoreCampo(12.5);
 		disegnaCariche(g('cariche'));
-		alert(2)
 		printCampo(g('campo'));
 }
 function devoDisegnare(nome){
