@@ -1,0 +1,349 @@
+<html>
+
+<head>
+<style>
+input[type=number]{
+	width:65px;
+	margin-top:2px;
+}
+.comp{
+	background: linear-gradient(rgb(100,100,100), rgb(170,170,170));
+	display:inline-flex
+}
+</style>
+<title></title>
+<script>
+var dati={
+	cariche:[[[-200,-200],0,25,false,[0,0]]],
+	dimensioni:[],
+	posNewCarica:[],
+	colore:false,
+	mobility:false,
+	mostPower:0,
+	disegno:'raggi',
+}
+function disegnaCariche(canvas){
+	var c=canvas.getContext('2d');
+	c.clearRect(0,0,dati.dimensioni[0],dati.dimensioni[1]);
+	for(var i=0;i<dati.cariche.length;i++){
+		c.beginPath();
+		c.fillStyle=(dati.cariche[i][1]>0) ? 'red' : 'blue'
+		c.arc(dati.cariche[i][0][0],dati.cariche[i][0][1],dati.cariche[i][2],0,2*Math.PI);
+		c.fill();
+		c.stroke();
+		c.fillStyle='white';
+		c.font="10px Arial";
+		c.fillText(dati.cariche[i][1]+'C',dati.cariche[i][0][0]-dati.cariche[i][2]+2,dati.cariche[i][0][1]+5)
+	}
+}
+function devoDisegnare(nome){
+	var tot=dati.disegno.split(',')
+	for(var i=0;i<tot.length;i++){
+		if(nome==tot[i])
+			return true;
+	}
+	return false;
+}
+function printCampo(canvas){
+	if(!devoDisegnare('raggi'))
+		return;
+	var pos=[0,0], dir=[0,0], prePos, ang, c=canvas.getContext('2d'), v, dentro, f=30, posF=[0,0] ,def=5, colori=[], colore, potenza, temp=0;
+	c.clearRect(0,0,dati.dimensioni[0],dati.dimensioni[1]);
+	for(var i=0;i<dati.cariche.length;i++){
+		for(var raggio=0;raggio<Math.abs(dati.cariche[i][1]);raggio++){
+			dentro=false;
+			pos=[dati.cariche[i][0][0]+(dati.cariche[i][2]+2)*Math.cos(2*Math.PI*raggio/dati.cariche[i][1]),dati.cariche[i][0][1]+(dati.cariche[i][2]+2)*Math.sin(2*Math.PI*raggio/dati.cariche[i][1])];
+			for(var t=0;true;t++){
+				dir=[0,0];
+				for(var j=0;j<dati.cariche.length;j++){
+					ang=Math.atan((pos[1]-dati.cariche[j][0][1])/(pos[0]-dati.cariche[j][0][0]));
+					v=40*Math.abs(dati.cariche[j][1])/Math.sqrt(Math.pow((dati.cariche[j][0][1]-pos[1]),2)+Math.pow((dati.cariche[j][0][0]-pos[0]),2));
+					if((pos[0]-dati.cariche[j][0][0])<0)
+						ang+=Math.PI;
+					if(dati.cariche[i][1]/Math.abs(dati.cariche[i][1])==-dati.cariche[j][1]/Math.abs(dati.cariche[j][1]))
+						ang+=Math.PI;
+					if((pos[0]-dati.cariche[j][0][0])*(pos[0]-dati.cariche[j][0][0])+(pos[1]-dati.cariche[j][0][1])*(pos[1]-dati.cariche[j][0][1])<dati.cariche[j][2]*dati.cariche[j][2]){
+						dentro=true;
+						break;
+					}
+					dir[0]+=v*Math.cos(ang);
+					dir[1]+=v*Math.sin(ang);
+				}
+				ang=(dir[0]<0) ? Math.atan(dir[1]/dir[0])+Math.PI : Math.atan(dir[1]/dir[0]);
+				if(dentro==true)
+					break;
+				prePos=pos;
+				pos=[pos[0]+def*Math.cos(ang),pos[1]+def*Math.sin(ang)];
+				potenza=255-Math.floor(Math.logT(v,Math.pow(dati.mostPower,1/255)));
+				c.beginPath();
+				c.strokeStyle=(dati.colore) ? 'rgb('+potenza+','+potenza+','+potenza+')' : 'black';
+				c.moveTo(prePos[0],prePos[1]);
+				c.lineTo(pos[0],pos[1]);
+				
+				c.stroke();
+				if(t%f==4){
+					if(dati.cariche[i][1]<0)
+						ang+=Math.PI;
+					var r=5;
+					c.beginPath()
+					c.moveTo(pos[0]+r*Math.cos(ang-Math.PI/2),pos[1]+r*Math.sin(ang-Math.PI/2));
+					c.lineTo(pos[0]+r*Math.cos(ang+Math.PI/2),pos[1]+r*Math.sin(ang+Math.PI/2));
+					c.lineTo(pos[0]+r*Math.cos(ang),pos[1]+r*Math.sin(ang));
+					c.lineTo(pos[0]+r*Math.cos(ang-Math.PI/2),pos[1]+r*Math.sin(ang-Math.PI/2));
+					c.fillStyle=(dati.colore) ? 'rgb('+potenza+','+potenza+','+potenza+')' : 'black';
+					c.fill();
+					c.stroke();
+				}
+				if(pos[0]<0 || pos[1]<0 || pos[0]>dati.dimensioni[0] || pos[1]>dati.dimensioni[1])
+					break;
+				if(t>20000)
+					break;
+			}
+		}
+	}
+}
+Math.logT=function(a,b){
+	return Math.log(a)/Math.log(b);
+}
+var pT=0;
+function muovi(v,T){
+	var f={}, ang, m, fr=1, temp=0, b=false;
+	for(var i=0;i<dati.cariche.length;i++){
+		if(temp<40*Math.abs(dati.cariche[i][1])/dati.cariche[i][2])
+			temp=40*Math.abs(dati.cariche[i][1])/dati.cariche[i][2];
+		if(!dati.cariche[i][3])
+			continue;
+		f[i]=trovaCampo(dati.cariche[i][0]);
+		
+	}
+	dati.mostPower=temp;
+	for(var i in f){
+	    b=true;
+		ang=(f[i][0]<0) ? Math.atan(f[i][1]/f[i][0])+Math.PI : Math.atan(f[i][1]/f[i][0]);
+		ang=(f[i][0]==0) ? Math.PI : ang;
+		m=dati.cariche[i][1]*Math.sqrt(f[i][0]*f[i][0]+f[i][1]*f[i][1])/10;
+		dati.cariche[i][4]=[dati.cariche[i][4][0]+m*Math.cos(ang),dati.cariche[i][4][1]+m*Math.sin(ang)]
+		dati.cariche[i][0]=[dati.cariche[i][0][0]+dati.cariche[i][4][0],dati.cariche[i][0][1]+dati.cariche[i][4][1]];
+	}
+	fr=Math.floor(60/(1000/(T-pT)));
+	fr=(fr) ? fr : 1;
+	if(v%fr==0 && b){
+		v=0;
+		disegna1(true);
+
+	}
+	pT=(T) ? T : 0;
+	window.requestAnimationFrame(function(t){muovi(v+1,t)});
+}
+function g(n){
+	return document.getElementById(n);
+}
+var ex=false;
+function disegna1(b){
+	ex=(b) ? true : ex;
+	if((ex && b) || (!ex)){
+		generaColoreCampo(12.5);
+		disegnaCariche(g('cariche'));
+		printCampo(g('campo'));
+	}
+}
+window.addEventListener('load',function(){
+	g('campo').width=g('campo').clientWidth;
+	g('campo').height=g('campo').clientHeight;
+	g('campo2').width=g('campo2').clientWidth;
+	g('campo2').height=g('campo2').clientHeight;
+	g('cariche').width=g('cariche').clientWidth;
+	g('cariche').height=g('cariche').clientHeight;
+	dati.dimensioni=[g('campo').width,g('campo').height];
+	disegnaCariche(g('cariche'));
+	printCampo(g('campo'));
+	window.addEventListener('contextmenu',function(e){
+		if((e.clientX<g('nuovaCarica').offsetLeft ||  e.clientY<g('nuovaCarica').offsetTop || e.clientX>g('nuovaCarica').offsetLeft+g('nuovaCarica').clientWidth ||  e.clientY>g('nuovaCarica').offsetTop+g('nuovaCarica').clientHeight) && +g('nuovaCarica').style.display==''){
+			g('nuovaCarica').style.display='none';
+			return;
+		}
+		if(g('nuovaCarica').style.display=='')
+			return;
+		g('nuovaCarica').style.display='';
+		g('nuovaCarica').style.top=e.clientY;
+		g('nuovaCarica').style.left=e.clientX;
+		g('posY').value=e.clientY;
+		g('posX').value=e.clientX;
+		dati.posNewCarica=[e.clientX,e.clientY];
+		return false;
+	})
+	window.addEventListener('click',function(e){disegna1();
+		var pos=[e.clientX,e.clientY], posC=[0,0], r;
+		for(var i=1;i<dati.cariche.length;i++){
+			posC=[dati.cariche[i][0][0],dati.cariche[i][0][1]];
+			r=dati.cariche[i][2]
+			if((posC[0]-pos[0])*(posC[0]-pos[0])+(posC[1]-pos[1])*(posC[1]-pos[1])<r*r){
+				dati.cariche.splice(i,1)
+				return;
+			}
+		}
+	})
+	window.addEventListener('dblclick',function(e){
+		g('aggiuntaRapida').style.display='';
+		g('aggiuntaRapida').style.top=e.clientY;
+		g('aggiuntaRapida').style.left=e.clientX;
+	})
+	window.addEventListener('mousemove',function(e){
+	var x=e.clientX, y=e.clientY;
+	
+		if(!dati.mobility){
+			g('campoElettrico').style.display='';
+			g('campoElettrico').style.top=y+10;
+			g('campoElettrico').style.left=x+10;
+			var dir=trovaCampo([x,y])
+			g('valX').innerHTML=dir[0].toFixed(2);
+			g('valY').innerHTML=dir[1].toFixed(2);
+			g('val').innerHTML=Math.floor(dir[0]*dir[0]+dir[1]*dir[1]);
+		}else{disegna1();
+			g('campoElettrico').style.display='none';
+			dati.cariche[0][0]=[x,y];
+		}
+	})
+	window.addEventListener('wheel',function(e){
+		if(!dati.mobility)
+			return;
+			disegna1();
+		var qt=e.deltaY;
+		dati.cariche[0][1]+=qt/100;
+	});
+	window.addEventListener('keydown',function(e){
+	
+		var pDisegni=['raggi','campo','']
+		if(e.keyCode==32){
+			dati.mobility=!dati.mobility;
+			if(!dati.mobility)
+				dati.cariche[0]=[[-200,-200],0,25];
+		}
+		if(e.keyCode==13 && dati.mobility){
+			dati.cariche.push([[dati.cariche[0][0][0],dati.cariche[0][0][1]],dati.cariche[0][1],dati.cariche[0][2]])
+		}
+		if(e.keyCode==67){
+			dati.colore=!dati.colore;
+		}
+		if(e.keyCode==68){
+			generaColoreCampo(2)
+		}
+		if(e.keyCode==38){
+			dati.cariche[0][1]+=1;
+		}
+		if(e.keyCode==40){
+			dati.cariche[0][1]=1;
+		}
+		if(e.keyCode==8){
+			for(var i=0;i<pDisegni.length;i++){
+				if(pDisegni[i]==dati.disegno){
+					dati.disegno=(i+1==pDisegni.length) ? pDisegni[0] : pDisegni[i+1];
+					cancella();
+					disegna1();
+					return;
+				}
+					
+			}
+		}
+		disegna1();
+	})
+	muovi(0);
+});
+function trovaCampo(pos){
+	var dir=[0,0], v, ang, x=pos[0], y=pos[1];
+	for(var j=0;j<dati.cariche.length;j++){
+					ang=Math.atan((y-dati.cariche[j][0][1])/(x-dati.cariche[j][0][0]));
+					v=40*Math.abs(dati.cariche[j][1])/Math.sqrt(Math.pow((dati.cariche[j][0][1]-y),2)+Math.pow((dati.cariche[j][0][0]-x),2));
+					if((x-dati.cariche[j][0][0])<0)
+						ang+=Math.PI;
+					/*if((x-dati.cariche[j][0][0])*(x-dati.cariche[j][0][0])+(y-dati.cariche[j][0][1])*(y-dati.cariche[j][0][1])<dati.cariche[j][2]*dati.cariche[j][2]){
+						continue;
+					}*/
+					if(dati.cariche[j][1]<0){
+						ang+=Math.PI;
+					}
+					dir[0]+=v*Math.cos(ang);
+					dir[1]+=v*Math.sin(ang);
+	}
+	return dir;
+}
+function aggiungi(s){eval(s)
+	disegna1();
+}
+function cancella(){
+	g('campo2').getContext('2d').clearRect(0,0,g('campo2').width,g('campo2').height)
+	g('campo').getContext('2d').clearRect(0,0,g('campo').width,g('campo').height)
+	g('cariche').getContext('2d').clearRect(0,0,g('cariche').width,g('cariche').height)
+}
+function generaColoreCampo(def){
+	if(!devoDisegnare('campo') && def>3)
+		return;
+	var canvas=g('campo2'), c=canvas.getContext('2d'), dimensioni=[canvas.width,canvas.height], potenza, dir;
+	for(var x=0;x<dimensioni[0];x+=def){
+			for(var y=0;y<dimensioni[1];y+=def){
+				dir=trovaCampo([x+def/2,y+def/2]);
+				potenza=255-Math.floor(Math.logT(Math.sqrt(dir[0]*dir[0]+dir[1]*dir[1]),Math.pow(dati.mostPower,1/255)));
+				c.fillStyle='rgb('+potenza+','+(potenza)+','+potenza+')'
+				c.fillRect(x,y,def+1,def+1);
+			}
+	}
+	
+}
+function generaVettore(s){
+	var num='', vS=[], v=[[0,0],0,0], contatore=0;
+	for(var i=2;i<s.length;i++){
+		if(-1*s[i] || s[i]=='+' || s[i]=='-' || -1*s[i]==0)
+			num+=s[i];
+		else if(num.length>0){
+			if(contatore%4==0 && contatore!=0){
+				vS.push(v);
+				v=[[0,0],0,0];
+			}
+			if(contatore%4==0 || contatore==0)
+				v[0][0]=1*num;
+			if(contatore%4==1)
+				v[0][1]=1*num;
+			if(contatore%4==2)
+				v[1]=1*num;
+			if(contatore%4==3)
+				v[2]=1*num;
+			num='';
+			contatore++;
+		}
+	}
+	vS.push(v);
+	return vS;
+	
+}
+</script>
+
+</head>
+
+
+
+<body style='cursor:pointer'>
+<canvas id='campo2' style='width:100%;height:100%;position:absolute;top:0;left:0'></canvas>
+<canvas id='campo' style='width:100%;height:100%;position:absolute;top:0;left:0'></canvas>
+<canvas id='cariche' oncontextmenu='return false' style='width:100%;height:100%;position:absolute;top:0;left:0'></canvas>
+<div id='nuovaCarica' style='position:absolute;display:none;border:2px solid;z-index:1;background-color:white'>
+<button onclick='setTimeout(function(){g("nuovaCarica").style.display="none"},10);'>X</button><br/>
+pos:<input type='number' id='posX'></input>x, <input type='number' id='posY'></input>y<br/>
+carica:<input type='number' id='carica'></input><br/>
+raggio:<input type='number' id='raggio'></input><br/>
+movibile:<input type='checkbox' id='mov'></input><br/>
+<button onclick='dati.cariche.push([[1*g("posX").value,1*g("posY").value],1*g("carica").value,1*g("raggio").value,true,[0,0]]);g("nuovaCarica").style.display="none";setTimeout(function(){g("nuovaCarica").style.display="none";},10)'>></button>
+</div>
+<div id='campoElettrico' style='position:absolute;'>
+	<div id='compX' class='comp'><i id='valX'>0</i> x</div>
+	<div id='compY' class='comp'><i id='valY'>0</i> y</div>
+	<div id='compY' class='comp'><i id='val'>0</i> N/C</div>
+</div>
+<div id='aggiuntaRapida' style='position:absolute;display:none;border:2px solid;z-index:1;background-color:white'>
+<button onclick='setTimeout(function(){g("aggiuntaRapida").style.display="none"},10);'>X</button><br/>
+<textarea id='vettori'></textarea>
+<button onclick='aggiungi(g("vettori").value)'>></button><br/>
+<div>
+</body>
+
+
+</html>
